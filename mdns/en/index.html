@@ -78,6 +78,9 @@
 <li><a class="reference internal" href="#mdns-properties">mDNS Properties</a></li>
 <li><a class="reference internal" href="#mdns-services">mDNS Services</a></li>
 <li><a class="reference internal" href="#mdns-query">mDNS Query</a></li>
+<li><a class="reference internal" href="#performance-optimization">Performance Optimization</a></li>
+<li><a class="reference internal" href="#execution-speed">Execution Speed</a></li>
+<li><a class="reference internal" href="#minimizing-ram-usage">Minimizing RAM Usage</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#application-example">Application Example</a></li>
@@ -110,7 +113,7 @@
       <li><a href="#" class="icon icon-home"></a> &raquo;</li>
       <li>mDNS Service</li>
       <li class="wy-breadcrumbs-aside">
-              <a href="https://github.com/espressif/esp-docs/blob/a9ed7eb/docs/en/index.rst" class="fa fa-github"> Edit on GitHub</a>
+              <a href="https://github.com/espressif/esp-protocols/blob/31f5f7a1/docs/en/index.rst" class="fa fa-github"> Edit on GitHub</a>
       </li>
   </ul>
   <hr/>
@@ -291,17 +294,36 @@
 </pre></div>
 </div>
 </section>
+<section id="performance-optimization">
+<h3>Performance Optimization<a class="headerlink" href="#performance-optimization" title="Permalink to this headline"></a></h3>
+</section>
+<section id="execution-speed">
+<h3>Execution Speed<a class="headerlink" href="#execution-speed" title="Permalink to this headline"></a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p>mDNS creates a task with default low priority 1 <code class="docutils literal notranslate"><span class="pre">CONFIG_MDNS_TASK_PRIORITY</span></code> (If <code class="docutils literal notranslate"><span class="pre">CONFIG_FREERTOS_UNICORE</span></code> enabeled it pinned to CPU0 (<code class="docutils literal notranslate"><span class="pre">CONFIG_MDNS_TASK_AFFINITY</span></code>).</p></li>
+</ul>
+<p>Please check <a class="reference external" href="https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/speed.html">Maximizing Execution Speed</a> for more details.</p>
+</div></blockquote>
+</section>
+<section id="minimizing-ram-usage">
+<h3>Minimizing RAM Usage<a class="headerlink" href="#minimizing-ram-usage" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p>mDNS creates a tasks with stack sizes configured by <code class="docutils literal notranslate"><span class="pre">CONFIG_MDNS_TASK_STACK_SIZE</span></code>.</p></li>
+</ul>
+<p>Please check <a class="reference external" href="https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/ram-usage.html">Minimizing RAM Usage</a> for more details.</p>
+</section>
 </section>
 <section id="application-example">
 <h2>Application Example<a class="headerlink" href="#application-example" title="Permalink to this headline"></a></h2>
-<p>mDNS server/scanner example: <a class="reference external" href="https://github.com/espressif/esp-protocols/tree/a9ed7eb/examples/../examples"></a>.</p>
+<p>mDNS server/scanner example: <a class="reference external" href="https://github.com/espressif/esp-protocols/tree/31f5f7a1/examples/../examples"></a>.</p>
 </section>
 <section id="api-reference">
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline"></a></h2>
 <section id="header-file">
 <h3>Header File<a class="headerlink" href="#header-file" title="Permalink to this headline"></a></h3>
 <ul class="simple">
-<li><p><a class="reference external" href="https://github.com/espressif/esp-protocols/blob/a9ed7eb/include/mdns.h">include/mdns.h</a></p></li>
+<li><p><a class="reference external" href="https://github.com/espressif/esp-protocols/blob/31f5f7a1/include/mdns.h">include/mdns.h</a></p></li>
 </ul>
 </section>
 <section id="functions">

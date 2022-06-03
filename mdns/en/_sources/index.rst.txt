@@ -176,6 +176,22 @@ Example of using the methods above::
         find_mdns_service("_ipp", "_tcp");
     }
 
+
+Performance Optimization
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Execution Speed
+^^^^^^^^^^^^^^^
+
+ - mDNS creates a task with default low priority 1 ``CONFIG_MDNS_TASK_PRIORITY`` (If ``CONFIG_FREERTOS_UNICORE`` enabeled it pinned to CPU0 (``CONFIG_MDNS_TASK_AFFINITY``).
+ Please check `Maximizing Execution Speed <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/speed.html>`_ for more details.
+
+Minimizing RAM Usage
+^^^^^^^^^^^^^^^^^^^^
+
+- mDNS creates a tasks with stack sizes configured by ``CONFIG_MDNS_TASK_STACK_SIZE``.
+Please check `Minimizing RAM Usage <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/ram-usage.html>`_ for more details.
+
 Application Example
 -------------------
 
