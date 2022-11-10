@@ -1,0 +1,85 @@
+name: Gcovr analyze
+
+on: [push, pull_request]
+
+jobs:
+  gcovr_analyzer_esp_modem:
+    name: Run gcovr on esp modem host test
+    #runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
+    container: espressif/idf:release-v4.3
+    env:
+      lwip: lwip-2.1.2
+      lwip_contrib: contrib-2.1.0
+      lwip_uri: http://download.savannah.nongnu.org/releases/lwip
+    steps:
+      - name: Checkout esp-protocols
+        uses: actions/checkout@master
+        with:
+          path: esp-protocols
+      - name: Build and Test
+        shell: bash
+        run: |
+          apt-get update && apt-get install -y gcc-8 g++-8 python3-pip
+          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 800 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+          export LWIP_PATH=`pwd`/${{ env.lwip }}
+          export LWIP_CONTRIB_PATH=`pwd`/${{ env.lwip_contrib }}
+          wget --no-verbose ${lwip_uri}/${lwip}.zip
+          unzip -oq ${lwip}.zip
+          wget --no-verbose ${lwip_uri}/${lwip_contrib}.zip
+          unzip -oq ${lwip_contrib}.zip
+          python -m pip install gcovr
+          . ${IDF_PATH}/export.sh
+          cd $GITHUB_WORKSPACE/esp-protocols/components/esp_modem/test/host_test
+          idf.py build
+          ./build/host_modem_test.elf -r junit -o junit.xml
+      - name: Run gcovr
+        shell: bash
+        run: |
+          gcovr --version
+          cd $GITHUB_WORKSPACE/esp-protocols/components/esp_modem/test/host_test
+          cd ../../
+          gcovr -r .
+          find . -name "*gcda"
+          find . -name "*gcno"
+          gcovr test/host_test/build/esp-idf/esp_modem/CMakeFiles/__idf_esp_modem.dir/src/ -r .
+      - name: Publish Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()
+        with:
+          files: esp-protocols/components/esp_modem/test/host_test/junit.xml
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: gcovr_analyzer_report
+          path: components/esp_modem/tests/host_test/*.html
+#      - name: HTML Preview
+#        working-directory: components/esp_modem/test/host_test
+#        id: html_preview
+#        uses: pavi2410/html-preview-action@v2
+#        with:
+#          html_file: 'index.html'
+
+#jobs:
+#  gcovr_analyzer_mdns:
+#    name: Run gcovr on mdns host test
+#    runs-on: ubuntu-22.04
+#    container: espressif/idf:latest
+#    steps:
+#      - name: Checkout esp-protocols
+#        uses: actions/checkout@master
+#        with:
+#          path: esp-protocols
+#      - name: Build and Test
+#        shell: bash
+#        run: |
+#           apt-get update && apt-get install iproute2 -y
+#           ip link add eth2 type dummy 
+#           ip addr add 192.168.1.200/24 dev eth2
+#           ip link set eth2 up
+#           ifconfig eth2 multicast
+#           dig +short -b 192.168.1.200 -p 5353 @224.0.0.251 myesp.local
+           
+#          . ${IDF_PATH}/export.sh
+#          cd $GITHUB_WORKSPACE/esp-protocols/components/mdns/test/host_test
+#          idf.py build
