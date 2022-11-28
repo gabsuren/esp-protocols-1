@@ -25,4 +25,10 @@ menu "esp-modem"
             The typical reason for failing SABM request without a delay is that
             some devices (SIM800) send MSC requests just after opening a new DLCI.
 
+    config GCOV_ENABLED
+        bool "Coverage analyzer"
+        default n
+        help
+	        Enables coverage analyzing for host tests.
+
 endmenu
