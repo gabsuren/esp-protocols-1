@@ -40,9 +40,9 @@ jobs:
           python -m pip install gcovr
           cd $GITHUB_WORKSPACE/${{ env.COMP_DIR }}
           gcov-8 `find . -name "esp_modem*gcda" -printf '%h\n' | head -n 1`/*
-          gcovr --gcov-ignore-parse-errors -g -k -r . --html index.html  -x esp_modem_coverage.xml
+          gcovr --gcov-ignore-parse-errors -g -k -r . --html code_coverage.html  -x esp_modem_coverage.xml
           mkdir docs_gcovr
-          cp $GITHUB_WORKSPACE/${{ env.COMP_DIR }}/index.html docs_gcovr
+          cp $GITHUB_WORKSPACE/${{ env.COMP_DIR }}/code_coverage.html docs_gcovr
           touch docs_gcovr/.nojekyll
 
       - name: Code Coverage Summary Report
