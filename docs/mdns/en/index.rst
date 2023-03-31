@@ -1,6 +1,6 @@
 mDNS Service
 ============
-`zh_CN:[中文] <https://espressif.github.io/esp-protocols/mdns/zh_CN/index.html>`_
+`[中文] <https://docs.espressif.com/projects/esp-protocols/mdns/latest/zh_CN/index.htm>`_
 
 Overview
 --------

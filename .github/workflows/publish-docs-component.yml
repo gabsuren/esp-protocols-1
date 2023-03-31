@@ -2,8 +2,8 @@ name: Docs and Publish
 
 on:
   push:
-    branches:
-      - master
+#    branches:
+#      - master
 
 env:
   DOCS_DEPLOY_URL_BASE: ${{ secrets.DOCS_DEPLOY_URL_BASE }}
@@ -17,7 +17,7 @@ jobs:
     name: Docs-Build-And-Upload
     runs-on: ubuntu-latest
     # Skip running on forks since it won't have access to secrets
-    if: github.repository == 'espressif/esp-protocols'
+#    if: github.repository == 'espressif/esp-protocols'
     steps:
       - name: Checkout esp-protocols
         uses: actions/checkout@master
@@ -25,27 +25,64 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           submodules: recursive
-      - name: Generate docs
+      - name: Environment setup
         shell: bash
         run: |
             sudo apt-get update
             sudo apt-get -y install doxygen clang python3-pip
             python -m pip install breathe recommonmark esp-docs==1.4.1
-            cd $GITHUB_WORKSPACE/docs
-            ./generate_docs
-      - name: Deploying generated docs
-        if: always()
+      - name: Build and Generate docs for Each Tag
         shell: bash
         run: |
-            source $GITHUB_WORKSPACE/docs/utils.sh
-            add_doc_server_ssh_keys $DOCS_DEPLOY_KEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
-            export GIT_VER=$(git describe --always)
-            export GITHUB_REF_NAME=latest
-            export DOCS_BUILD_DIR=$GITHUB_WORKSPACE/docs
-            deploy-docs
-      - name: Upload components to component service
-        uses: espressif/github-actions/upload_components@master
-        with:
-          directories: "components/esp_modem;components/esp_websocket_client;components/mdns;components/asio"
-          namespace: "espressif"
-          api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
+            tags=$(git tag -l)
+            delimiter="-"
+            IFS="$delimiter"
+
+            for tag in $tags; do
+              read -ra parts <<< "$tag"
+              if [[ "${parts[0]}" -eq "mdns" ]]; then
+                URL=$DOCS_DEPLOY_URL_BASE"/mdns/"${parts[1]}"/en/index.html"
+                echo $URL
+                #status_code=$(curl -Is $URL | head -n 1 | cut -d ' ' -f2)
+                status_code=200
+                if [ $status_code -eq 200 ]; then
+                  git checkout $tag
+                  cd $GITHUB_WORKSPACE/docs/mdns
+                  ./generate_docs
+                  export GITHUB_REF_NAME=${parts[1]}
+                  export DOCS_BUILD_DIR=$GITHUB_WORKSPACE/docs/mdns
+                  deploy-docs
+                fi
+              fi
+             # if [[ "${parts[0]}" -ne "mdns" ]]; then
+             #    URL=$DOCS_DEPLOY_URL_BASE"/docs/"${parts[0]}/${parts[1]}"/index.html"
+             #    status_code=$(curl -Is $URL | head -n 1 | cut -d ' ' -f2)
+             #    if [ $status_code -ne 200 ]; then
+             #      git checkout $tag
+             #      cd $GITHUB_WORKSPACE/docs/${parts[0]}
+             #      ./generate_docs
+             #      export GITHUB_REF_NAME=${parts[1]}
+             #      export DOCS_BUILD_DIR=$GITHUB_WORKSPACE/docs/${parts[0]}
+             #      deploy-docs
+             #    fi
+             #  fi
+
+            done
+
+
+      #- name: Deploying generated docs
+      #  if: always()
+      #  shell: bash
+      #  run: |
+      #      source $GITHUB_WORKSPACE/docs/utils.sh
+      #      add_doc_server_ssh_keys $DOCS_DEPLOY_KEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
+      #      export GIT_VER=$(git describe --always)
+      #      export GITHUB_REF_NAME=latest
+      #      export DOCS_BUILD_DIR=$GITHUB_WORKSPACE/docs
+      #      deploy-docs
+      #- name: Upload components to component service
+      #  uses: espressif/github-actions/upload_components@master
+      #  with:
+      #    directories: "components/esp_modem;components/esp_websocket_client;components/mdns;components/asio"
+      #    namespace: "espressif"
+      #    api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
