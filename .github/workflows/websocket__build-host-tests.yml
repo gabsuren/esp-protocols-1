@@ -1,0 +1,38 @@
+name: "websocket: build/host-tests"
+
+on:
+  push:
+  #  branches:
+  #    - master
+  #pull_request:
+  #  types: [opened, synchronize, reopened, labeled]
+jobs:
+  host_test_websocket:
+    if: contains(github.event.pull_request.labels.*.name, 'websocket') || github.event_name == 'push'
+    name: Host Tests
+    runs-on: ubuntu-20.04
+    container: espressif/idf:latest
+    env:
+      COMP_DIR: esp-protocols/components/esp_websocket_client/test/example-linux
+    steps:
+      - name: Checkout esp-protocols
+        uses: actions/checkout@v3
+        with:
+          path: esp-protocols
+      - name: Build and Test
+        shell: bash
+        run: |
+          . ${IDF_PATH}/export.sh
+          pwd
+          cd ${{ env.COMP_DIR }}
+          idf.py build
+          ./build/example-linux.elf -r junit -o junit.xml
+      - name: Build with Coverage Enabled
+        shell: bash
+        run: |
+          . ${IDF_PATH}/export.sh
+          cd ${{ env.COMP_DIR }}
+          cat sdkconfig.ci.coverage >> sdkconfig.defaults
+          rm -rf build sdkconfig
+          idf.py build
+          ./build/example-linux.elf
