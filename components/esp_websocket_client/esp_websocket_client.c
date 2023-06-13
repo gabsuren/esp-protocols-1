@@ -20,6 +20,12 @@
 #include "esp_timer.h"
 #include "esp_tls_crypto.h"
 
+#if defined(CONFIG_IDF_TARGET_LINUX)
+#include <arpa/inet.h>
+#include <errno.h>
+#include "esp_system.h"
+#endif
+
 static const char *TAG = "websocket_client";
 
 #define WEBSOCKET_TCP_DEFAULT_PORT      (80)

@@ -14,7 +14,8 @@
 
 
 #include <stdio.h>
-#include "esp_wifi.h"
+// #include "esp_wifi.h"
+#include "esp_netif.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
@@ -34,8 +35,8 @@
 
 static const char *TAG = "websocket";
 
-static TimerHandle_t shutdown_signal_timer;
-static SemaphoreHandle_t shutdown_sema;
+//static TimerHandle_t shutdown_signal_timer;
+//static SemaphoreHandle_t shutdown_sema;
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
@@ -44,11 +45,11 @@ static void log_error_if_nonzero(const char *message, int error_code)
     }
 }
 
-static void shutdown_signaler(TimerHandle_t xTimer)
-{
-    ESP_LOGI(TAG, "No data received for %d seconds, signaling shutdown", NO_DATA_TIMEOUT_SEC);
-    xSemaphoreGive(shutdown_sema);
-}
+//static void shutdown_signaler(TimerHandle_t xTimer)
+//{
+//    ESP_LOGI(TAG, "No data received for %d seconds, signaling shutdown", NO_DATA_TIMEOUT_SEC);
+//    xSemaphoreGive(shutdown_sema);
+//}
 
 #if CONFIG_WEBSOCKET_URI_FROM_STDIN
 static void get_string(char *line, size_t size)
@@ -108,7 +109,7 @@ static void websocket_event_handler(void *handler_args, esp_event_base_t base, i
 
         ESP_LOGW(TAG, "Total payload length=%d, data_len=%d, current payload offset=%d\r\n", data->payload_len, data->data_len, data->payload_offset);
 
-        xTimerReset(shutdown_signal_timer, portMAX_DELAY);
+        //   xTimerReset(shutdown_signal_timer, portMAX_DELAY);
         break;
     case WEBSOCKET_EVENT_ERROR:
         ESP_LOGI(TAG, "WEBSOCKET_EVENT_ERROR");
@@ -126,9 +127,9 @@ static void websocket_app_start(void)
 {
     esp_websocket_client_config_t websocket_cfg = {};
 
-    shutdown_signal_timer = xTimerCreate("Websocket shutdown timer", NO_DATA_TIMEOUT_SEC * 1000 / portTICK_PERIOD_MS,
-                                         pdFALSE, NULL, shutdown_signaler);
-    shutdown_sema = xSemaphoreCreateBinary();
+    //shutdown_signal_timer = xTimerCreate("Websocket shutdown timer", NO_DATA_TIMEOUT_SEC * 1000 / portTICK_PERIOD_MS,
+    //                                     pdFALSE, NULL, shutdown_signaler);
+    //shutdown_sema = xSemaphoreCreateBinary();
 
 #if CONFIG_WEBSOCKET_URI_FROM_STDIN
     char line[128];
@@ -149,7 +150,7 @@ static void websocket_app_start(void)
     esp_websocket_register_events(client, WEBSOCKET_EVENT_ANY, websocket_event_handler, (void *)client);
 
     esp_websocket_client_start(client);
-    xTimerStart(shutdown_signal_timer, portMAX_DELAY);
+    // xTimerStart(shutdown_signal_timer, portMAX_DELAY);
     char data[32];
     int i = 0;
     while (i < 5) {
@@ -161,13 +162,13 @@ static void websocket_app_start(void)
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
-    xSemaphoreTake(shutdown_sema, portMAX_DELAY);
-    esp_websocket_client_close(client, portMAX_DELAY);
+    //  xSemaphoreTake(shutdown_sema, portMAX_DELAY);
+    //  esp_websocket_client_close(client, portMAX_DELAY);
     ESP_LOGI(TAG, "Websocket Stopped");
     esp_websocket_client_destroy(client);
 }
 
-void app_main(void)
+int main(void)
 {
     ESP_LOGI(TAG, "[APP] Startup..");
     ESP_LOGI(TAG, "[APP] Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
@@ -188,4 +189,5 @@ void app_main(void)
     ESP_ERROR_CHECK(example_connect());
 
     websocket_app_start();
+    return 0;
 }
