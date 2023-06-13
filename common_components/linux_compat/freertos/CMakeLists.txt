@@ -1,4 +1,4 @@
-idf_component_register(SRCS freertos_linux.c
+idf_component_register(SRCS freertos_linux.c timers.c
                             osal/queue.cpp osal/event_group.cpp osal/mutex.cpp
                        INCLUDE_DIRS include)
 

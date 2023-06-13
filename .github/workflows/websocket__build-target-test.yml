@@ -76,6 +76,7 @@ jobs:
           unzip ci/artifacts.zip -d ci
           for dir in `ls -d ci/build_*`; do
           rm -rf build sdkconfig.defaults
+          cp sdkconfig.ci.esp32 sdkconfig.defaults
           mv $dir build
           python -m pytest --log-cli-level DEBUG --junit-xml=./results_${{ matrix.test.app }}_${{ matrix.idf_target }}_${{ matrix.idf_ver }}_${dir#"ci/build_"}.xml --target=${{ matrix.idf_target }}
           done
