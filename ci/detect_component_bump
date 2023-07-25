@@ -2,10 +2,10 @@
 
 set -e
 
-if ! git show -s | grep -q '^Merge'; then
-    echo "Not a merge commit"
-    exit 0;
-fi
+#if ! git show -s | grep -q '^Merge'; then
+#    echo "Not a merge commit"
+#    exit 0;
+#fi
 
 for comp in  `ls components`; do
 if git log -1 -m --name-only --pretty="" | grep -q components/${comp}/idf_component.yml; then

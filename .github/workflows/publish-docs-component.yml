@@ -17,7 +17,7 @@ jobs:
     name: Publish Tag, Release, Docs, Component
     runs-on: ubuntu-latest
     # Skip running on forks since it won't have access to secrets
-    if: github.repository == 'espressif/esp-protocols'
+#    if: github.repository == 'espressif/esp-protocols'
     steps:
       - name: Checkout esp-protocols
         uses: actions/checkout@v3
@@ -80,14 +80,14 @@ jobs:
                 export GITHUB_REF_NAME=${{ env.BUMP_VERSION }}
                 deploy-docs
             fi
-      - name: Upload components to component service
-        uses: espressif/upload-components-ci-action@v1
-        with:
-          directories: >
-            components/asio;
-            components/esp_modem;
-            components/esp_mqtt_cxx;
-            components/esp_websocket_client;
-            components/mdns;
-          namespace: "espressif"
-          api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
+#      - name: Upload components to component service
+#        uses: espressif/upload-components-ci-action@v1
+#        with:
+#          directories: >
+#            components/asio;
+#            components/esp_modem;
+#            components/esp_mqtt_cxx;
+#            components/esp_websocket_client;
+#            components/mdns;
+#          namespace: "espressif"
+#          api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
