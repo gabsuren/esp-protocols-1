@@ -17,7 +17,6 @@
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
-#include "esp_event.h"
 #include "protocol_examples_common.h"
 
 #include "freertos/FreeRTOS.h"
@@ -27,7 +26,6 @@
 
 #include "esp_log.h"
 #include "esp_websocket_client.h"
-#include "esp_event.h"
 #include <cJSON.h>
 
 #define NO_DATA_TIMEOUT_SEC 5
