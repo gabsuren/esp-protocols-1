@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
+set(COMPONENTS app_main)
 set(EXTRA_COMPONENT_DIRS    # Add esp_modem component and linux port components
         ../..
         ../../port/linux)
 
-set(COMPONENTS main)
 project(host_modem_test)
 
 idf_component_get_property(esp_modem esp_modem COMPONENT_LIB)
