@@ -2,8 +2,8 @@ name: "esp-modem: build/host-tests"
 
 on:
   push:
-    branches:
-      - master
+#    branches:
+#      - master
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
@@ -56,7 +56,7 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'modem') || github.event_name == 'push'
     uses: "./.github/workflows/run-host-tests.yml"
     with:
-        idf_version: "release-v4.3"
+        idf_version: "latest"
         app_name: "host_modem_test"
         app_path: "esp-protocols/components/esp_modem/test/host_test"
         component_path: "esp-protocols/components/esp_modem"

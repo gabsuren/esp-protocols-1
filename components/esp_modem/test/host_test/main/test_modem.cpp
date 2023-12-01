@@ -6,9 +6,10 @@
 #define CATCH_CONFIG_MAIN // This tells the catch header to generate a main
 #include <memory>
 #include <future>
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "cxx_include/esp_modem_api.hpp"
 #include "LoopbackTerm.h"
+#include <iostream>
 
 using namespace esp_modem;
 
