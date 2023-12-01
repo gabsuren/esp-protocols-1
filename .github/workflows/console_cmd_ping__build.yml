@@ -2,8 +2,8 @@ name: "console_cmd_ping: build-tests"
 
 on:
   push:
-    branches:
-      - master
+#    branches:
+#      - master
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
@@ -16,7 +16,7 @@ jobs:
         idf_ver: ["latest", "release-v5.0"]
         idf_target: ["esp32"]
         test: [ { app: ping-basic, path: "components/console_cmd_ping/examples" }]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: espressif/idf:${{ matrix.idf_ver }}
     steps:
       - name: Checkout esp-protocols
