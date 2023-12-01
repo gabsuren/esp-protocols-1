@@ -2,8 +2,8 @@ name: "websocket: build/host-tests"
 
 on:
   push:
-    branches:
-      - master
+#    branches:
+#      - master
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
@@ -18,3 +18,4 @@ jobs:
         app_path: "esp-protocols/components/esp_websocket_client/examples/linux"
         component_path: "esp-protocols/components/esp_websocket_client"
         upload_artifacts: true
+        run_coverage: true
