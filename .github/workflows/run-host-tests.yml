@@ -28,14 +28,14 @@ on:
 jobs:
   build:
       name: Build App
-      runs-on: ubuntu-20.04
+      runs-on: ubuntu-22.04
       permissions:
         checks: write
         contents: write
       container: espressif/idf:${{inputs.idf_version}}
       steps:
         - name: Checkout esp-protocols
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
           with:
             path: esp-protocols
         - name: Build ${{ inputs.app_name }} with IDF-${{ inputs.idf_version }}
@@ -100,7 +100,7 @@ jobs:
         - name: Write to Job Summary
           run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
         - name: Upload files to artifacts for run-target job
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           if: ${{inputs.upload_artifacts}}
           with:
             name: ${{inputs.app_name}}_coverage_report
