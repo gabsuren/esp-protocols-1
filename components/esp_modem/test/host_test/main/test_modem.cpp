@@ -349,19 +349,24 @@ TEST_CASE("CMUX manual mode transitions", "[esp_modem][transitions]")
 
 }
 
+#define CATCH_CONFIG_RUNNER
 extern "C" int app_main(void)
 {
-    int argc = 1;
-    const char *argv[2] = {
-        "esp_modem",
-        NULL
-    };
+    // Define the argument count and arguments for Catch2, including JUnit reporting
+    int argc = 5;
+    const char *argv[] = {"esp_modem", "-r", "junit", "-o", "junit.xml", nullptr};
 
-    auto result = Catch::Session().run(argc, argv);
+    // Run the Catch2 session and store the result
+    int result = Catch::Session().run(argc, argv);
+
+    // Use more descriptive error handling
     if (result != 0) {
-        printf("Test failed with result %d\n", result);
+        printf("Test failed with result %d. Refer to the Catch2 documentation for error details.\n", result);
     } else {
-        printf("Test passed.\n");
+        printf("All tests passed successfully.\n");
     }
+
+    // Check for the junit.xml file in the current working directory
+    // Exit the application with the test result as the status code
     std::exit(result);
 }
