@@ -4,7 +4,8 @@ if(${target} STREQUAL "linux")
     set(platform_srcs src/esp_modem_primitives_linux.cpp
         src/esp_modem_uart_linux.cpp
         src/esp_modem_netif_linux.cpp)
-    set(dependencies esp_system_protocols_linux)
+    set(dependencies esp_system_protocols_linux esp_event_mock esp_netif_linux)
+    set(EXCLUDE_COMPONENTS log)
 else()
     set(platform_srcs src/esp_modem_primitives_freertos.cpp
                       src/esp_modem_api_target.cpp

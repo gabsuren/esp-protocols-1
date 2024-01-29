@@ -4,8 +4,11 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 set(EXTRA_COMPONENT_DIRS    # Add esp_modem component and linux port components
         ../..
-        ../../port/linux
-        "$ENV{IDF_PATH}/tools/mocks/freertos/")
+        ../../port/linux)
+set(EXCLUDE_COMPONENTS log)
+#        "$ENV{IDF_PATH}/tools/mocks/freertos/")
+
+idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH_ENABLED 1)
 
 set(COMPONENTS esp_modem main)
 project(host_modem_test)

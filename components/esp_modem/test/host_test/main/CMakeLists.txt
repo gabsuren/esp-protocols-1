@@ -1,5 +1,5 @@
 idf_component_register(SRCS "test_modem.cpp" "LoopbackTerm.cpp"
-                       REQUIRES esp_modem WHOLE_ARCHIVE)
+                       REQUIRES esp_modem)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
