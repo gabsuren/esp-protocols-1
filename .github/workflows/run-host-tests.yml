@@ -34,14 +34,14 @@ on:
 jobs:
   build:
       name: Build App
-      runs-on: ubuntu-20.04
+      runs-on: ubuntu-22.04
       permissions:
         checks: write
         contents: write
       container: espressif/idf:${{inputs.idf_version}}
       steps:
         - name: Checkout esp-protocols
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
           with:
             path: esp-protocols
         - name: Build ${{ inputs.app_name }} with IDF-${{ inputs.idf_version }}
@@ -63,7 +63,8 @@ jobs:
             fi
 
             if [ "${{ inputs.publish_unit_test_result }}" == "true" ]; then
-              ./build/${{inputs.app_name}}.elf --reporter JUnit::out=result-junit.xml --reporter console::out=-::colour-mode=ansi
+              ./build/${{inputs.app_name}}.elf --reporter JUnit::out=junit.xml --reporter console::out=-::colour-mode=ansi
+              cat junit.xml
             else
               ./build/${{inputs.app_name}}.elf
             fi
@@ -119,7 +120,7 @@ jobs:
           run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
           if: ${{ inputs.run_coverage }}
         - name: Upload files to artifacts for run-target job
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           if: ${{ inputs.run_coverage }}
           with:
             name: ${{inputs.app_name}}_coverage_report

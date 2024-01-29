@@ -1,4 +1,5 @@
 dependencies:
-  espressif/catch2: "^3.4.0"
+  espressif/catch2:
+    version: '*'
   idf:
     version: ">=5.0"
