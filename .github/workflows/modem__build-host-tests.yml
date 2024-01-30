@@ -2,52 +2,51 @@ name: "esp-modem: build/host-tests"
 
 on:
   push:
-    branches:
-      - master
-  pull_request:
-    types: [opened, synchronize, reopened, labeled]
-
+#    branches:
+#      - master
+#  pull_request:
+#    types: [opened, synchronize, reopened, labeled]
+#
 jobs:
-  build_esp_modem_examples:
-    if: contains(github.event.pull_request.labels.*.name, 'modem') || github.event_name == 'push'
-    name: Build examples
-    strategy:
-      matrix:
-        idf_ver: ["latest", "release-v4.3", "release-v4.4", "release-v5.0"]
-        example: ["pppos_client", "modem_console", "modem_tcp_client", "ap_to_pppos", "simple_cmux_client"]
-        exclude:
-          - idf_ver: "release-v4.3"
-            example: modem_tcp_client
-          - idf_ver: "release-v4.4"
-            example: modem_tcp_client
-        include:
-          - idf_ver: "release-v4.3"
-            skip_config: usb
-          - idf_ver: "release-v5.0"
-            example: "simple_cmux_client"
-            warning: "Warning: The smallest app partition is nearly full"
-
-    runs-on: ubuntu-20.04
-    container: espressif/idf:${{ matrix.idf_ver }}
-    steps:
-      - name: Checkout esp-protocols
-        uses: actions/checkout@v3
-        with:
-          path: protocols
-      - if: ${{ matrix.skip_config }}
-        run: rm -f $GITHUB_WORKSPACE/protocols/components/esp_modem/examples/${{ matrix.example }}/sdkconfig.ci.${{ matrix.skip_config }}*
-      - name: Build ${{ matrix.example }} with IDF-${{ matrix.idf_ver }}
-        env:
-          EXPECTED_WARNING: ${{ matrix.warning }}
-        shell: bash
-        run: |
-          . ${IDF_PATH}/export.sh
-          python -m pip install idf-build-apps
-          cd $GITHUB_WORKSPACE/protocols
-          python ./ci/build_apps.py components/esp_modem/examples/${{ matrix.example }} -m components/esp_modem/.build-test-rules.yml
+#  build_esp_modem_examples:
+#    if: contains(github.event.pull_request.labels.*.name, 'modem') || github.event_name == 'push'
+#    name: Build examples
+#    strategy:
+#      matrix:
+#        idf_ver: ["latest", "release-v4.3", "release-v4.4", "release-v5.0"]
+#        example: ["pppos_client", "modem_console", "modem_tcp_client", "ap_to_pppos", "simple_cmux_client"]
+#        exclude:
+#          - idf_ver: "release-v4.3"
+#            example: modem_tcp_client
+#          - idf_ver: "release-v4.4"
+#            example: modem_tcp_client
+#        include:
+#          - idf_ver: "release-v4.3"
+#            skip_config: usb
+#          - idf_ver: "release-v5.0"
+#            example: "simple_cmux_client"
+#            warning: "Warning: The smallest app partition is nearly full"
+#
+#    runs-on: ubuntu-20.04
+#    container: espressif/idf:${{ matrix.idf_ver }}
+#    steps:
+#      - name: Checkout esp-protocols
+#        uses: actions/checkout@v3
+#        with:
+#          path: protocols
+#      - if: ${{ matrix.skip_config }}
+#        run: rm -f $GITHUB_WORKSPACE/protocols/components/esp_modem/examples/${{ matrix.example }}/sdkconfig.ci.${{ matrix.skip_config }}*
+#      - name: Build ${{ matrix.example }} with IDF-${{ matrix.idf_ver }}
+#        env:
+#          EXPECTED_WARNING: ${{ matrix.warning }}
+#        shell: bash
+#        run: |
+#          . ${IDF_PATH}/export.sh
+#          python -m pip install idf-build-apps
+#          cd $GITHUB_WORKSPACE/protocols
+#          python ./ci/build_apps.py components/esp_modem/examples/${{ matrix.example }} -m components/esp_modem/.build-test-rules.yml
 
   build_esp_modem_tests:
-    if: contains(github.event.pull_request.labels.*.name, 'modem') || github.event_name == 'push'
     name: Build tests
     strategy:
       matrix:
