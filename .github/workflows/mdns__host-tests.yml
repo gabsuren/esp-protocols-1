@@ -2,14 +2,14 @@ name: "mdns: host-tests"
 
 on:
   push:
-    branches:
-      - master
+#    branches:
+#      - master
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
 jobs:
   host_test_mdns:
-    if: contains(github.event.pull_request.labels.*.name, 'mdns') || github.event_name == 'push'
+#    if: contains(github.event.pull_request.labels.*.name, 'mdns') || github.event_name == 'push'
     name: Host test
     runs-on: ubuntu-22.04
     container: espressif/idf:release-v5.1
