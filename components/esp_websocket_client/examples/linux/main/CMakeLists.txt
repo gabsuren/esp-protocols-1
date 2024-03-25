@@ -1,7 +1,9 @@
 idf_component_register(SRCS "main.c"
                     INCLUDE_DIRS
                     "."
-                    REQUIRES esp_websocket_client protocol_examples_common)
+                    REQUIRES esp_websocket_client protocol_examples_common WHOLE_ARCHIVE)
+
+target_compile_definitions(${COMPONENT_LIB} PRIVATE "-DCONFIG_IDF_TARGET_LINUX")
 
 if(CONFIG_GCOV_ENABLED)
     target_compile_options(${COMPONENT_LIB} PUBLIC --coverage -fprofile-arcs -ftest-coverage)

@@ -1,4 +1,8 @@
 dependencies:
-  idf: ">5.2"
+  ## Required IDF version
+  idf: ">=5.2.0"
+  espressif/esp_websocket_client:
+    version: "^1.2.1"
+    override_path: "../../../"
   protocol_examples_common:
     path: ${IDF_PATH}/examples/common_components/protocol_examples_common

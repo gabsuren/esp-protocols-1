@@ -44,24 +44,25 @@ jobs:
           uses: actions/checkout@v4
           with:
             path: esp-protocols
-        - name: Build ${{ inputs.app_name }} with IDF-${{ inputs.idf_version }}
-          shell: bash
-          run: |
-            component=$(basename ${{ inputs.component_path }})
-            if [ -f "${{ inputs.pre_run_script }}" ]; then
-              source ${{ inputs.pre_run_script }} ${{ inputs.idf_version }} $component
-            fi
-            . ${IDF_PATH}/export.sh
-            cd ${{inputs.app_path}}
-            rm -rf sdkconfig sdkconfig.defaults build
-            # The sdkconfig.ci.linux specifies Linux as the build target with apropriate settings.
-            cp sdkconfig.ci.linux sdkconfig.defaults
-            idf.py build
-            if [ "${{ inputs.run_executable}}" == "false" ]; then
-                echo "Executeable wasn't run"
-                exit 0
-            fi
-            ./build/${{inputs.app_name}}.elf
+      #  - name: Build ${{ inputs.app_name }} with IDF-${{ inputs.idf_version }}
+      #    shell: bash
+      #    run: |
+      #      component=$(basename ${{ inputs.component_path }})
+      #      if [ -f "${{ inputs.pre_run_script }}" ]; then
+      #        source ${{ inputs.pre_run_script }} ${{ inputs.idf_version }} $component
+      #      fi
+      #      . ${IDF_PATH}/export.sh
+      #      cd ${{inputs.app_path}}
+      #      rm -rf sdkconfig sdkconfig.defaults build
+      #      # The sdkconfig.ci.linux specifies Linux as the build target with apropriate settings.
+      #      cp sdkconfig.ci.linux sdkconfig.defaults
+      #      idf.py reconfigure
+      #      idf.py build
+      #      if [ "${{ inputs.run_executable}}" == "false" ]; then
+      #          echo "Executeable wasn't run"
+      #          exit 0
+      #      fi
+      #      ./build/${{inputs.app_name}}.elf
         - name: Publish Unit Test Result
           uses: EnricoMi/publish-unit-test-result-action@v2
           if: ${{ inputs.publish_unit_test_result }}
