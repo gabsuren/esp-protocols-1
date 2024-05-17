@@ -88,6 +88,7 @@ jobs:
           if: ${{ inputs.run_coverage }}
           run: |
             apt-get update && apt-get install -y python3-pip rsync
+            python -m pip install --upgrade pip setuptools
             python -m pip install gcovr
             cd $GITHUB_WORKSPACE/${{inputs.component_path}}
             component=$(basename ${{ inputs.component_path }})
