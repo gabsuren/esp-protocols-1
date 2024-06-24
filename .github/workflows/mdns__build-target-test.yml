@@ -3,7 +3,7 @@ name: "mdns: build/target-tests"
 on:
   push:
     branches:
-      - master
+#      - master
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
