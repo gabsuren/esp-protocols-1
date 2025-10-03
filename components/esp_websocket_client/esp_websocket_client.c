@@ -727,11 +727,15 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     ESP_WS_CLIENT_MEM_CHECK(TAG, client->config, goto _websocket_init_fail);
 
     if (config->transport == WEBSOCKET_TRANSPORT_OVER_TCP) {
-        asprintf(&client->config->scheme, WS_OVER_TCP_SCHEME);
-        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
+        if (asprintf(&client->config->scheme, WS_OVER_TCP_SCHEME) < 0) {
+            ESP_LOGE(TAG, "Failed to allocate memory for scheme");
+            goto _websocket_init_fail;
+        }
     } else if (config->transport == WEBSOCKET_TRANSPORT_OVER_SSL) {
-        asprintf(&client->config->scheme, WS_OVER_TLS_SCHEME);
-        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
+        if (asprintf(&client->config->scheme, WS_OVER_TLS_SCHEME) < 0) {
+            ESP_LOGE(TAG, "Failed to allocate memory for scheme");
+            goto _websocket_init_fail;
+        }
     }
 
     if (!config->disable_auto_reconnect && config->reconnect_timeout_ms <= 0) {
@@ -775,8 +779,10 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     }
 
     if (client->config->scheme == NULL) {
-        asprintf(&client->config->scheme, WS_OVER_TCP_SCHEME);
-        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
+        if (asprintf(&client->config->scheme, WS_OVER_TCP_SCHEME) < 0) {
+            ESP_LOGE(TAG, "Failed to allocate memory for scheme");
+            goto _websocket_init_fail;
+        }
     }
 
     client->keepalive_tick_ms = _tick_get_ms();
@@ -852,28 +858,40 @@ esp_err_t esp_websocket_client_set_uri(esp_websocket_client_handle_t client, con
     }
     if (puri.field_data[UF_SCHEMA].len) {
         free(client->config->scheme);
-        asprintf(&client->config->scheme, "%.*s", puri.field_data[UF_SCHEMA].len, uri + puri.field_data[UF_SCHEMA].off);
-        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, return ESP_ERR_NO_MEM);
+        if (asprintf(&client->config->scheme, "%.*s", puri.field_data[UF_SCHEMA].len, uri + puri.field_data[UF_SCHEMA].off) < 0) {
+            ESP_LOGE(TAG, "Failed to allocate memory for scheme");
+            return ESP_ERR_NO_MEM;
+        }
     }
 
     if (puri.field_data[UF_HOST].len) {
         free(client->config->host);
-        asprintf(&client->config->host, "%.*s", puri.field_data[UF_HOST].len, uri + puri.field_data[UF_HOST].off);
-        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->host, return ESP_ERR_NO_MEM);
+        if (asprintf(&client->config->host, "%.*s", puri.field_data[UF_HOST].len, uri + puri.field_data[UF_HOST].off) < 0) {
+            ESP_LOGE(TAG, "Failed to allocate memory for host");
+            return ESP_ERR_NO_MEM;
+        }
     }
 
 
     if (puri.field_data[UF_PATH].len || puri.field_data[UF_QUERY].len) {
         free(client->config->path);
         if (puri.field_data[UF_QUERY].len == 0) {
-            asprintf(&client->config->path, "%.*s", puri.field_data[UF_PATH].len, uri + puri.field_data[UF_PATH].off);
+            if (asprintf(&client->config->path, "%.*s", puri.field_data[UF_PATH].len, uri + puri.field_data[UF_PATH].off) < 0) {
+                ESP_LOGE(TAG, "Failed to allocate memory for path");
+                return ESP_ERR_NO_MEM;
+            }
         } else if (puri.field_data[UF_PATH].len == 0)  {
-            asprintf(&client->config->path, "/?%.*s", puri.field_data[UF_QUERY].len, uri + puri.field_data[UF_QUERY].off);
+            if (asprintf(&client->config->path, "/?%.*s", puri.field_data[UF_QUERY].len, uri + puri.field_data[UF_QUERY].off) < 0) {
+                ESP_LOGE(TAG, "Failed to allocate memory for path");
+                return ESP_ERR_NO_MEM;
+            }
         } else {
-            asprintf(&client->config->path, "%.*s?%.*s", puri.field_data[UF_PATH].len, uri + puri.field_data[UF_PATH].off,
-                     puri.field_data[UF_QUERY].len, uri + puri.field_data[UF_QUERY].off);
+            if (asprintf(&client->config->path, "%.*s?%.*s", puri.field_data[UF_PATH].len, uri + puri.field_data[UF_PATH].off,
+                         puri.field_data[UF_QUERY].len, uri + puri.field_data[UF_QUERY].off) < 0) {
+                ESP_LOGE(TAG, "Failed to allocate memory for path");
+                return ESP_ERR_NO_MEM;
+            }
         }
-        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->path, return ESP_ERR_NO_MEM);
     }
     if (puri.field_data[UF_PORT].off) {
         client->config->port = strtol((const char *)(uri + puri.field_data[UF_PORT].off), NULL, 10);
@@ -881,7 +899,10 @@ esp_err_t esp_websocket_client_set_uri(esp_websocket_client_handle_t client, con
 
     if (puri.field_data[UF_USERINFO].len) {
         char *user_info = NULL;
-        asprintf(&user_info, "%.*s", puri.field_data[UF_USERINFO].len, uri + puri.field_data[UF_USERINFO].off);
+        if (asprintf(&user_info, "%.*s", puri.field_data[UF_USERINFO].len, uri + puri.field_data[UF_USERINFO].off) < 0) {
+            ESP_LOGE(TAG, "Failed to allocate memory for user info");
+            return ESP_ERR_NO_MEM;
+        }
         if (user_info) {
             char *pass = strchr(user_info, ':');
             if (pass) {

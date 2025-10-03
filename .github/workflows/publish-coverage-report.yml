@@ -5,13 +5,13 @@ on:
     workflows: ["websocket: build/host-tests", "esp-modem: build/host-tests"]
     types:
       - completed
-    branches:
-      - master
+#    branches:
+#      - master
 
 jobs:
   publish_github_pages:
     runs-on: ubuntu-latest
-    if: github.repository == 'espressif/esp-protocols'
+#    if: github.repository == 'espressif/esp-protocols'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2

@@ -2,10 +2,10 @@ name: "esp-modem: build/host-tests"
 
 on:
   push:
-    branches:
-      - master
-  pull_request:
-    types: [opened, synchronize, reopened, labeled]
+#    branches:
+#      - master
+#  pull_request:
+##    types: [opened, synchronize, reopened, labeled]
 
 jobs:
   build_esp_modem_examples:
