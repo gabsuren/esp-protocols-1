@@ -244,7 +244,17 @@ static esp_err_t esp_websocket_client_dispatch_event(esp_websocket_client_handle
 static esp_err_t esp_websocket_client_abort_connection(esp_websocket_client_handle_t client, esp_websocket_error_type_t error_type)
 {
     ESP_WS_CLIENT_STATE_CHECK(TAG, client, return ESP_FAIL);
+
+    // CRITICAL: Check if already closing/closed to prevent double-close
+    if (client->state == WEBSOCKET_STATE_CLOSING || client->state == WEBSOCKET_STATE_UNKNOW) {
+        ESP_LOGW(TAG, "Connection already closing/closed, skipping abort");
+        return ESP_OK;
+    }
+
     esp_transport_close(client->transport);
+    // Note: We do NOT set client->transport = NULL here because:
+    // 1. Transport is reused on reconnect
+    // 2. We use state instead to track if transport is valid
 
     if (!client->config->auto_reconnect) {
         client->run = false;
@@ -256,6 +266,7 @@ static esp_err_t esp_websocket_client_abort_connection(esp_websocket_client_hand
     }
     client->error_handle.error_type = error_type;
     esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_DISCONNECTED, NULL, 0);
+
     return ESP_OK;
 }
 
@@ -679,8 +690,18 @@ static int esp_websocket_client_send_with_exact_opcode(esp_websocket_client_hand
             } else {
                 esp_websocket_client_error(client, "esp_transport_write() returned %d, errno=%d", ret, errno);
             }
+            ESP_LOGD(TAG, "Calling abort_connection due to send error");
+#ifdef CONFIG_ESP_WS_CLIENT_SEPARATE_TX_LOCK
+            xSemaphoreGiveRecursive(client->tx_lock);
+            xSemaphoreTakeRecursive(client->lock, portMAX_DELAY);
+            esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT);
+            xSemaphoreGiveRecursive(client->lock);
+            return ret;
+#else
+            // Already holding client->lock, safe to call
             esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT);
             goto unlock_and_return;
+#endif
         }
         opcode = 0;
         widx += wlen;
@@ -1019,7 +1040,6 @@ static esp_err_t esp_websocket_client_recv(esp_websocket_client_handle_t client)
             esp_websocket_free_buf(client, false);
             return ESP_OK;
         }
-
         esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_DATA, client->rx_buffer, rlen);
 
         client->payload_offset += rlen;
@@ -1030,9 +1050,36 @@ static esp_err_t esp_websocket_client_recv(esp_websocket_client_handle_t client)
         const char *data = (client->payload_len == 0) ? NULL : client->rx_buffer;
         ESP_LOGD(TAG, "Sending PONG with payload len=%d", client->payload_len);
 #ifdef CONFIG_ESP_WS_CLIENT_SEPARATE_TX_LOCK
-        if (xSemaphoreTakeRecursive(client->tx_lock, WEBSOCKET_TX_LOCK_TIMEOUT_MS) != pdPASS) {
-            ESP_LOGE(TAG, "Could not lock ws-client within %d timeout", WEBSOCKET_TX_LOCK_TIMEOUT_MS);
-            return ESP_FAIL;
+        // CRITICAL: To avoid deadlock, we must follow lock ordering: tx_lock BEFORE client->lock
+        // Current state: We hold client->lock (acquired by caller at line 1228)
+        // We need: tx_lock
+        // Deadlock risk: Send error path holds tx_lock and waits for client->lock = circular wait!
+        //
+        // Solution: Temporarily release client->lock, acquire both locks in correct order
+        // 1. Release client->lock
+        // 2. Acquire tx_lock (now safe - no deadlock)
+        // 3. Re-acquire client->lock (for consistency with caller expectations)
+        // 4. Send PONG
+        // 5. Release both locks in reverse order
+
+        xSemaphoreGiveRecursive(client->lock);  // Release client->lock
+
+        // Now acquire tx_lock (safe - no circular wait possible)
+        if (xSemaphoreTakeRecursive(client->tx_lock, portMAX_DELAY) != pdPASS) {
+            ESP_LOGE(TAG, "Failed to acquire tx_lock for PONG");
+            xSemaphoreTakeRecursive(client->lock, portMAX_DELAY);  // Re-acquire client->lock before returning
+            return ESP_OK;  // Return gracefully, caller expects client->lock to be held
+        }
+
+        // Re-acquire client->lock to maintain consistency
+        xSemaphoreTakeRecursive(client->lock, portMAX_DELAY);
+
+        // CRITICAL: Check if transport is still valid after re-acquiring lock
+        // Another thread may have closed it while we didn't hold client->lock
+        if (client->state == WEBSOCKET_STATE_CLOSING || client->state == WEBSOCKET_STATE_UNKNOW || client->transport == NULL) {
+            ESP_LOGW(TAG, "Transport closed while preparing PONG, skipping send");
+            xSemaphoreGiveRecursive(client->tx_lock);
+            return ESP_OK;  // Caller expects client->lock to be held, which it is
         }
 #endif
         esp_transport_ws_send_raw(client->transport, WS_TRANSPORT_OPCODES_PONG | WS_TRANSPORT_OPCODES_FIN, data, client->payload_len,
@@ -1221,12 +1268,14 @@ static void esp_websocket_client_task(void *pv)
                 esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT);
                 xSemaphoreGiveRecursive(client->lock);
             } else if (read_select > 0) {
+                // CRITICAL: Protect entire recv operation with client->lock
+                // This prevents transport from being closed while recv is in progress
+                xSemaphoreTakeRecursive(client->lock, lock_timeout);
                 if (esp_websocket_client_recv(client) == ESP_FAIL) {
                     ESP_LOGE(TAG, "Error receive data");
-                    xSemaphoreTakeRecursive(client->lock, lock_timeout);
                     esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT);
-                    xSemaphoreGiveRecursive(client->lock);
                 }
+                xSemaphoreGiveRecursive(client->lock);
             }
         } else if (WEBSOCKET_STATE_WAIT_TIMEOUT == client->state) {
             // waiting for reconnection or a request to stop the client...
