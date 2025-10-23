@@ -245,6 +245,9 @@ static esp_err_t esp_websocket_client_abort_connection(esp_websocket_client_hand
 {
     ESP_WS_CLIENT_STATE_CHECK(TAG, client, return ESP_FAIL);
 
+    // Note: This function must be called with client->lock already held
+    // The caller is responsible for acquiring the lock before calling
+
     // CRITICAL: Check if already closing/closed to prevent double-close
     if (client->state == WEBSOCKET_STATE_CLOSING || client->state == WEBSOCKET_STATE_UNKNOW) {
         ESP_LOGW(TAG, "Connection already closing/closed, skipping abort");
@@ -266,6 +269,16 @@ static esp_err_t esp_websocket_client_abort_connection(esp_websocket_client_hand
     }
     client->error_handle.error_type = error_type;
     esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_DISCONNECTED, NULL, 0);
+
+    if (client->errormsg_buffer) {
+        ESP_LOGI(TAG, "Freeing error buffer (%d bytes) - Free heap: %d bytes",
+                 client->errormsg_size, esp_get_free_heap_size());
+        free(client->errormsg_buffer);
+        client->errormsg_buffer = NULL;
+        client->errormsg_size = 0;
+    } else {
+        ESP_LOGI(TAG, "Disconnect - Free heap: %d bytes", esp_get_free_heap_size());
+    }
 
     return ESP_OK;
 }
@@ -1183,6 +1196,11 @@ static void esp_websocket_client_task(void *pv)
             client->state = WEBSOCKET_STATE_CONNECTED;
             client->wait_for_pong_resp = false;
             client->error_handle.error_type = WEBSOCKET_ERROR_TYPE_NONE;
+            client->payload_len = 0;
+            client->payload_offset = 0;
+            client->last_fin = false;
+            client->last_opcode = WS_TRANSPORT_OPCODES_NONE;
+
             esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_CONNECTED, NULL, 0);
             break;
         case WEBSOCKET_STATE_CONNECTED:
@@ -1273,6 +1291,7 @@ static void esp_websocket_client_task(void *pv)
                 xSemaphoreTakeRecursive(client->lock, lock_timeout);
                 if (esp_websocket_client_recv(client) == ESP_FAIL) {
                     ESP_LOGE(TAG, "Error receive data");
+                    // Note: Already holding client->lock from line above
                     esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT);
                 }
                 xSemaphoreGiveRecursive(client->lock);
@@ -1357,7 +1376,16 @@ esp_err_t esp_websocket_client_stop(esp_websocket_client_handle_t client)
         return ESP_FAIL;
     }
 
-    return stop_wait_task(client);
+    esp_err_t ret = stop_wait_task(client);
+
+    if (client->transport_list) {
+        ESP_LOGI(TAG, "Destroying transport list to free resources immediately");
+        esp_transport_list_destroy(client->transport_list);
+        client->transport_list = NULL;
+        client->transport = NULL;
+    }
+
+    return ret;
 }
 
 static int esp_websocket_client_send_close(esp_websocket_client_handle_t client, int code, const char *additional_data, int total_len, TickType_t timeout)
