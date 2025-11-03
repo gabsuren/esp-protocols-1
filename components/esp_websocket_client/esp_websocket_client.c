@@ -1002,8 +1002,9 @@ static esp_err_t esp_websocket_client_recv(esp_websocket_client_handle_t client)
             esp_websocket_free_buf(client, false);
             esp_tls_error_handle_t error_handle = esp_transport_get_error_handle(client->transport);
             if (error_handle) {
+                const char *error_name = esp_err_to_name(error_handle->last_error);
                 esp_websocket_client_error(client, "esp_transport_read() failed with %d, transport_error=%s, tls_error_code=%i, tls_flags=%i, errno=%d",
-                                           rlen, esp_err_to_name(error_handle->last_error), error_handle->esp_tls_error_code,
+                                           rlen, error_name ? error_name : "UNKNOWN", error_handle->esp_tls_error_code,
                                            error_handle->esp_tls_flags, errno);
             } else {
                 esp_websocket_client_error(client, "esp_transport_read() failed with %d, errno=%d", rlen, errno);
@@ -1096,15 +1097,8 @@ static void esp_websocket_client_task(void *pv)
             if (result < 0) {
                 esp_tls_error_handle_t error_handle = esp_transport_get_error_handle(client->transport);
                 client->error_handle.esp_ws_handshake_status_code  = esp_transport_ws_get_upgrade_request_status(client->transport);
-                if (error_handle) {
-                    esp_websocket_client_error(client, "esp_transport_connect() failed with %d, "
-                                               "transport_error=%s, tls_error_code=%i, tls_flags=%i, esp_ws_handshake_status_code=%d, errno=%d",
-                                               result, esp_err_to_name(error_handle->last_error), error_handle->esp_tls_error_code,
-                                               error_handle->esp_tls_flags, client->error_handle.esp_ws_handshake_status_code, errno);
-                } else {
-                    esp_websocket_client_error(client, "esp_transport_connect() failed with %d, esp_ws_handshake_status_code=%d, errno=%d",
-                                               result, client->error_handle.esp_ws_handshake_status_code, errno);
-                }
+                esp_websocket_client_error(client, "esp_transport_connect() failed with %d, esp_ws_handshake_status_code=%d, errno=%d",
+                                           result, client->error_handle.esp_ws_handshake_status_code, errno);
                 esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT);
                 break;
             }
@@ -1137,6 +1131,13 @@ static void esp_websocket_client_task(void *pv)
             client->wait_for_pong_resp = false;
             client->error_handle.error_type = WEBSOCKET_ERROR_TYPE_NONE;
             esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_CONNECTED, NULL, 0);
+            int immediate_poll = esp_transport_poll_read(client->transport, 0); // Non-blocking
+            if (immediate_poll > 0) {
+                esp_err_t recv_result = esp_websocket_client_recv(client);
+                if (recv_result == ESP_OK) {
+                    esp_event_loop_run(client->event_handle, 0);
+                }
+            }
             break;
         case WEBSOCKET_STATE_CONNECTED:
             if ((CLOSE_FRAME_SENT_BIT & xEventGroupGetBits(client->status_bits)) == 0) { // only send and check for PING
@@ -1204,8 +1205,9 @@ static void esp_websocket_client_task(void *pv)
             if (read_select < 0) {
                 esp_tls_error_handle_t error_handle = esp_transport_get_error_handle(client->transport);
                 if (error_handle) {
+                    const char *error_name = esp_err_to_name(error_handle->last_error);
                     esp_websocket_client_error(client, "esp_transport_poll_read() returned %d, transport_error=%s, tls_error_code=%i, tls_flags=%i, errno=%d",
-                                               read_select, esp_err_to_name(error_handle->last_error), error_handle->esp_tls_error_code,
+                                               read_select, error_name ? error_name : "UNKNOWN", error_handle->esp_tls_error_code,
                                                error_handle->esp_tls_flags, errno);
                 } else {
                     esp_websocket_client_error(client, "esp_transport_poll_read() returned %d, errno=%d", read_select, errno);
