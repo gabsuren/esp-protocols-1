@@ -14,7 +14,6 @@ jobs:
     name: Build
     strategy:
       matrix:
-        #idf_ver: ["release-v5.0", "release-v5.1", "release-v5.2", "release-v5.3", "latest"]
         idf_ver: [ "latest"]
         idf_target: ["esp32"]
     runs-on: ubuntu-22.04
