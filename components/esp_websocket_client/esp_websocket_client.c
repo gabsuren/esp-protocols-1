@@ -1168,12 +1168,6 @@ static void esp_websocket_client_task(void *pv)
                     }
                 }
             }
-
-
-            if (read_select == 0) {
-                ESP_LOGV(TAG, "Read poll timeout: skipping esp_transport_read()...");
-                break;
-            }
             break;
         case WEBSOCKET_STATE_WAIT_TIMEOUT:
 
