@@ -39,7 +39,7 @@ static char g_autobahn_server_uri[256] = {0};
 #endif
 #define BUFFER_SIZE         16384  // Reduced from 32768 to free memory for accumulator buffer
 #define START_CASE          1
-#define END_CASE            16
+#define END_CASE            300
 // Configure test range here:
 // Category 1 (Framing):          Tests 1-16
 // Category 2 (Ping/Pong):        Tests 17-27
