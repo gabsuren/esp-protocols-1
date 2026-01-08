@@ -47,6 +47,7 @@ jobs:
         - name: Build ${{ inputs.app_name }} with IDF-${{ inputs.idf_version }}
           shell: bash
           run: |
+            set -euo pipefail
             component=$(basename ${{ inputs.component_path }})
             if [ -f "${{ inputs.pre_run_script }}" ]; then
               source ${{ inputs.pre_run_script }} ${{ inputs.idf_version }} $component
@@ -56,12 +57,52 @@ jobs:
             rm -rf sdkconfig sdkconfig.defaults build
             # The sdkconfig.ci.linux specifies Linux as the build target with apropriate settings.
             cp sdkconfig.ci.linux sdkconfig.defaults
-            idf.py build
+            idf.py -D CMAKE_BUILD_TYPE=RelWithDebInfo build
             if [ "${{ inputs.run_executable}}" == "false" ]; then
                 echo "Executeable wasn't run"
                 exit 0
             fi
+            # Best-effort: enable core dumps so we can generate gdb backtraces on crashes.
+            ulimit -c unlimited || true
+
+            # Ensure gdb exists (container image may not ship it).
+            if ! command -v gdb >/dev/null 2>&1; then
+              apt-get update
+              apt-get install -y gdb
+            fi
+
+            set +e
             ./build/${{inputs.app_name}}.elf
+            rc=$?
+            set -e
+
+            if [ $rc -ne 0 ]; then
+              echo "::group::Core dump files (if any)"
+              ls -la core* 2>/dev/null || true
+              echo "::endgroup::"
+
+              corefile="$(ls -1t core* 2>/dev/null | head -n 1 || true)"
+              if [ -n "$corefile" ]; then
+                echo "::group::gdb backtrace from core ($corefile)"
+                gdb -q -batch \
+                  -ex "set pagination off" \
+                  -ex "bt full" \
+                  -ex "thread apply all bt full" \
+                  ./build/${{inputs.app_name}}.elf "$corefile" || true
+                echo "::endgroup::"
+              else
+                echo "::group::gdb backtrace (re-run under gdb; may not reproduce)"
+                timeout 60s gdb -q -batch \
+                  -ex "set pagination off" \
+                  -ex run \
+                  -ex "bt full" \
+                  -ex "thread apply all bt full" \
+                  --args ./build/${{inputs.app_name}}.elf || true
+                echo "::endgroup::"
+              fi
+            fi
+
+            exit $rc
         - name: Publish Unit Test Result
           uses: EnricoMi/publish-unit-test-result-action@v2
           if: ${{ inputs.publish_unit_test_result }}
@@ -71,6 +112,7 @@ jobs:
           shell: bash
           if: ${{ inputs.run_coverage }}
           run: |
+            set -euo pipefail
             component=$(basename ${{ inputs.component_path }})
             if [ -f "${{ inputs.pre_run_script }}" ]; then
               source ${{ inputs.pre_run_script }} ${{ inputs.idf_version }} $component
@@ -81,8 +123,49 @@ jobs:
             idf.py fullclean
              # The sdkconfig.ci.coverage specifies Linux as the build target with apropriate settings (CONFIG_GCOV_ENABLED=y).
             cp sdkconfig.ci.coverage sdkconfig.defaults
-            idf.py build
+            idf.py -D CMAKE_BUILD_TYPE=RelWithDebInfo build
+
+            # Best-effort: enable core dumps so we can generate gdb backtraces on crashes.
+            ulimit -c unlimited || true
+
+            # Ensure gdb exists (container image may not ship it).
+            if ! command -v gdb >/dev/null 2>&1; then
+              apt-get update
+              apt-get install -y gdb
+            fi
+
+            set +e
             ./build/${{inputs.app_name}}.elf
+            rc=$?
+            set -e
+
+            if [ $rc -ne 0 ]; then
+              echo "::group::Core dump files (if any)"
+              ls -la core* 2>/dev/null || true
+              echo "::endgroup::"
+
+              corefile="$(ls -1t core* 2>/dev/null | head -n 1 || true)"
+              if [ -n "$corefile" ]; then
+                echo "::group::gdb backtrace from core ($corefile)"
+                gdb -q -batch \
+                  -ex "set pagination off" \
+                  -ex "bt full" \
+                  -ex "thread apply all bt full" \
+                  ./build/${{inputs.app_name}}.elf "$corefile" || true
+                echo "::endgroup::"
+              else
+                echo "::group::gdb backtrace (re-run under gdb; may not reproduce)"
+                timeout 60s gdb -q -batch \
+                  -ex "set pagination off" \
+                  -ex run \
+                  -ex "bt full" \
+                  -ex "thread apply all bt full" \
+                  --args ./build/${{inputs.app_name}}.elf || true
+                echo "::endgroup::"
+              fi
+            fi
+
+            exit $rc
         - name: Run Coverage
           shell: bash
           if: ${{ inputs.run_coverage }}

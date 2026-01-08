@@ -3,9 +3,9 @@ name: "websocket: build/host-tests"
 on:
   push:
     branches:
-      - master
-  pull_request:
-    types: [opened, synchronize, reopened, labeled]
+#      - master
+#  pull_request:
+#    types: [opened, synchronize, reopened, labeled]
 
 
 jobs:

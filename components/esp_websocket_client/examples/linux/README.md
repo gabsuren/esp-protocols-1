@@ -23,7 +23,7 @@ idf.py build
 I (76826192) websocket: [APP] Startup..
 I (76826193) websocket: [APP] Free memory: 4294967295 bytes
 I (76826193) websocket: [APP] IDF version: v6.0-dev-2414-gab3feab1d13
-I (76826195) websocket: Connecting to wss://echo.websocket.org...
+I (76826195) websocket: Connecting to wss://echo.websocket.events...
 W (76826195) websocket_client: `reconnect_timeout_ms` is not set, or it is less than or equal to zero, using default time out 10000 (milliseconds)
 W (76826195) websocket_client: `network_timeout_ms` is not set, or it is less than or equal to zero, using default time out 10000 (milliseconds)
 I (76826195) websocket: WEBSOCKET_EVENT_BEGIN
